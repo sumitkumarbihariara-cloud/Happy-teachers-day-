@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Happy Teacher's Day — Math Vision</title>
+<meta name="description" content="A cinematic 3D Teacher's Day celebration — Math Vision">
+
+<!-- ============ FONTS ============ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Poppins:wght@300;400;500;600&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   0. RESET & BASE
+========================================================= */
+*,*::before,*::after{ box-sizing:border-box; }
+:root{
+  --navy:#140f22;
+  --navy-deep:#0a0714;
+  --purple:#2c2049;
+  --plum:#3a1f2e;
+  --gold:#e9b64d;
+  --amber:#d97b3f;
+  --chalk:#f6f0e4;
+  --board:#182620;
+  --board-dark:#0f1a15;
+  --glass: rgba(22,17,36,0.55);
+  --glass-border: rgba(233,182,77,0.22);
+  --serif: 'Playfair Display', serif;
+  --sans: 'Poppins', sans-serif;
+  --chalkfont: 'Caveat', cursive;
+}
+html,body{
+  margin:0; padding:0; width:100%; height:100%;
+  background: var(--navy-deep);
+  color: var(--chalk);
+  font-family: var(--sans);
+  overflow-x:hidden;
+  overscroll-behavior:none;
+  -webkit-tap-highlight-color: transparent;
+}
+::selection{ background: var(--gold); color:#1a1440; }
+::-webkit-scrollbar{ width:8px; }
+::-webkit-scrollbar-thumb{ background: rgba(240,200,105,0.35); border-radius:4px; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+}
+
+button, .tap-target{ cursor:pointer; -webkit-user-select:none; user-select:none; touch-action: manipulation; }
+a{ color:inherit; }
+
+/* =========================================================
+   1. CANVAS LAYERS (three.js bg + confetti/fireworks 2d)
+========================================================= */
+#bg-canvas{
+  position:fixed; inset:0; width:100%; height:100%;
+  z-index:0; display:block; background:
+    radial-gradient(ellipse at 50% 15%, #3a2b52 0%, #1c1530 45%, #0a0714 100%);
+}
+#fx-canvas{
+  position:fixed; inset:0; width:100%; height:100%;
+  z-index:5; pointer-events:none;
+}
+#fallback-2d{
+  position:fixed; inset:0; z-index:0; display:none;
+  background: radial-gradient(ellipse at 50% 15%, #3a2b52 0%, #1c1530 55%, #0a0714 100%);
+  overflow:hidden;
+}
+/* softens/darkens the 3D scene behind readable sections so floating shapes
+   never fight with text — hero keeps the vivid, uncovered scene */
+#vignette{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background: radial-gradient(ellipse at 50% 30%, rgba(10,7,20,0.1) 0%, rgba(10,7,20,0.55) 62%, rgba(10,7,20,0.86) 100%);
+  opacity:0; transition: opacity 1.2s ease;
+}
+#vignette.show{ opacity:1; }
+#fallback-2d .fstar{
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background: var(--gold); opacity:.7;
+  animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle{ 0%,100%{opacity:.2; transform:scale(1);} 50%{opacity:.9; transform:scale(1.6);} }
+
+/* cursor glow (desktop only) */
+#cursor-glow{
+  position:fixed; width:26px; height:26px; border-radius:50%;
+  pointer-events:none; z-index:9999; top:0; left:0;
+  background: radial-gradient(circle, rgba(240,200,105,0.55) 0%, rgba(240,200,105,0) 70%);
+  transform: translate(-50%,-50%);
+  transition: opacity .3s ease;
+  mix-blend-mode: screen;
+}
+@media (hover:none){ #cursor-glow{ display:none; } }
+
+/* =========================================================
+   2. LOADER
+========================================================= */
+#loader{
+  position:fixed; inset:0; z-index:10000; background:var(--navy-deep);
+  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+  transition: opacity 1s ease, visibility 1s ease;
+}
+#loader.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+.loader-dot{
+  width:10px; height:10px; border-radius:50%; background:var(--gold);
+  box-shadow:0 0 20px 4px rgba(240,200,105,.7);
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+@keyframes pulseDot{ 0%,100%{ transform:scale(1); opacity:.6;} 50%{ transform:scale(2.2); opacity:1;} }
+#loader p{ font-family:var(--sans); letter-spacing:.14em; font-size:.72rem; color:rgba(245,242,232,.55); text-transform:uppercase; }
+
+/* =========================================================
+   2b. NAME / ROLE / PASSWORD GATE
+========================================================= */
+#gate{
+  position:fixed; inset:0; z-index:20000; background:var(--navy-deep);
+  display:flex; align-items:center; justify-content:center; padding:6vw;
+  transition: opacity .9s ease, visibility .9s ease;
+}
+#gate.fade-out{ opacity:0; visibility:hidden; pointer-events:none; }
+.gate-card{
+  width:min(92vw, 440px); text-align:center;
+  background: linear-gradient(165deg, rgba(233,182,77,0.1), rgba(255,255,255,0.02));
+  border:1px solid var(--glass-border); border-radius:24px;
+  padding: 2.6rem 2rem; box-shadow:0 30px 70px rgba(0,0,0,.5);
+}
+.gate-label{ font-size:.78rem; letter-spacing:.08em; color:rgba(245,240,228,.55); margin:0 0 .6rem; }
+.gate-title{
+  font-family:var(--serif); font-style:italic; font-weight:600;
+  font-size:clamp(1.3rem,5vw,1.7rem); margin:0 0 1.4rem; color:var(--chalk);
+}
+.gate-hint{ font-size:.78rem; color:rgba(245,240,228,.45); margin:-.8rem 0 1rem; }
+.gate-input{
+  width:100%; padding:.9rem 1.1rem; border-radius:14px; margin-bottom:1.1rem;
+  background:rgba(255,255,255,.06); border:1px solid var(--glass-border);
+  color:var(--chalk); font-family:var(--sans); font-size:1rem; text-align:center;
+  outline:none;
+}
+.gate-input::placeholder{ color:rgba(245,240,228,.35); }
+.gate-input:focus{ border-color:var(--gold); }
+.gate-role-row{ display:flex; flex-direction:column; gap:12px; }
+.gate-skip{
+  display:block; margin:1rem auto 0; background:none; border:none;
+  color:rgba(245,240,228,.5); font-size:.8rem; text-decoration:underline;
+}
+.gate-error{ color:#e8836f; font-size:.8rem; margin-top:.8rem; min-height:1.1em; }
+.gate-step[hidden]{ display:none; }
+
+/* =========================================================
+   2c. ROLE-BASED VISIBILITY (student vs teacher)
+========================================================= */
+.teacher-only-block{ display:none; }
+body.role-teacher .teacher-only-block{ display:flex; }
+.role-badge{
+  display:inline-block; font-size:.72rem; letter-spacing:.1em;
+  padding:.4rem .9rem; border-radius:20px; margin-bottom:1rem;
+  background:rgba(233,182,77,.14); border:1px solid var(--glass-border);
+  color:var(--gold);
+}
+
+/* =========================================================
+   3. SCROLL CONTAINER / SECTIONS
+========================================================= */
+#scene-root{ position:relative; z-index:2; width:100%; }
+.scene{
+  min-height:100svh; width:100%;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; padding: 8vh 6vw;
+  text-align:center;
+}
+.scene-inner{ max-width:900px; margin:0 auto; position:relative; }
+.scene:not(#hero) .scene-inner{
+  background: linear-gradient(165deg, rgba(28,20,44,0.5), rgba(14,10,24,0.32));
+  backdrop-filter: blur(20px) saturate(115%);
+  -webkit-backdrop-filter: blur(20px) saturate(115%);
+  border:1px solid rgba(233,182,77,0.14);
+  border-radius:28px;
+  padding: clamp(2rem,5vw,3.4rem) clamp(1.2rem,5vw,2.6rem);
+  box-shadow: 0 30px 70px rgba(0,0,0,.4);
+}
+
+/* fade-reveal utility */
+.reveal{ opacity:0; transform:translateY(28px); transition: opacity 1s ease, transform 1s ease; }
+.reveal.in-view{ opacity:1; transform:translateY(0); }
+
+/* =========================================================
+   4. INTRO (Scene 1)
+========================================================= */
+#intro{
+  position:fixed; inset:0; z-index:50; background:var(--navy-deep);
+  display:flex; align-items:center; justify-content:center;
+  transition: opacity 1.4s ease;
+}
+#intro.fade-out{ opacity:0; pointer-events:none; }
+.intro-line{
+  font-family:var(--serif); font-style:italic; font-weight:500;
+  font-size: clamp(1.3rem, 4.4vw, 2.4rem);
+  color: var(--chalk); opacity:0;
+  letter-spacing:.01em;
+  padding:0 5vw;
+}
+.skip-btn{
+  position:fixed; bottom:26px; right:26px; z-index:60;
+  background:transparent; border:1px solid rgba(245,242,232,.3);
+  color:rgba(245,242,232,.7); border-radius:30px; padding:8px 18px;
+  font-family:var(--sans); font-size:.75rem; letter-spacing:.06em;
+}
+
+/* =========================================================
+   5. HERO / BLACKBOARD (Scene 2)
+========================================================= */
+#hero{ padding-top:12vh; }
+.board-frame{
+  width:min(92vw, 780px); aspect-ratio: 16/10;
+  margin:0 auto 2.2rem;
+  background: linear-gradient(180deg,#3a2b1c,#241a10);
+  border-radius:14px; padding:16px;
+  box-shadow: 0 30px 70px rgba(0,0,0,.55), inset 0 0 0 2px rgba(0,0,0,.3);
+}
+.board-inner{
+  width:100%; height:100%; border-radius:6px;
+  background: radial-gradient(ellipse at 50% 30%, var(--board) 0%, var(--board-dark) 100%);
+  position:relative; overflow:hidden;
+  box-shadow: inset 0 0 60px rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center;
+}
+.chalk-svg{ width:88%; height:70%; }
+.chalk-svg text{
+  font-family: var(--chalkfont);
+  fill:none; stroke:var(--chalk); stroke-width:2.4;
+  stroke-linecap:round; stroke-linejoin:round;
+  filter: drop-shadow(0 0 3px rgba(245,242,232,.5));
+}
+.chalk-svg .line2{ fill:none; stroke:var(--gold); }
+.board-caption{
+  font-family:var(--serif); font-style:italic; font-size:clamp(1rem,2.6vw,1.3rem);
+  color:rgba(245,242,232,.55); margin-top:.6rem;
+}
+.hero-title{
+  font-family:var(--serif); font-weight:700;
+  font-size: clamp(2.2rem, 7vw, 4.4rem);
+  line-height:1.05; margin: 1.6rem 0 .6rem;
+  background: linear-gradient(180deg, #fff8e6, var(--gold) 70%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow: 0 0 40px rgba(240,200,105,.25);
+}
+.hero-sub{
+  font-family:var(--sans); font-weight:300; letter-spacing:.02em;
+  font-size:clamp(.95rem,2.2vw,1.15rem); color:rgba(245,242,232,.75);
+  max-width:520px; margin:0 auto 2.6rem;
+}
+.brand-tag{
+  font-family:var(--sans); font-size:.72rem; letter-spacing:.24em;
+  color: rgba(232,161,60,.75); margin-bottom:1.1rem; font-weight:500;
+}
+
+/* =========================================================
+   6. BUTTONS (glass / 3d / magnetic / ripple)
+========================================================= */
+.btn{
+  position:relative; display:inline-flex; align-items:center; gap:.55rem;
+  padding: 1.05rem 2.1rem; border-radius:50px; border:none;
+  background: linear-gradient(160deg, rgba(240,200,105,0.16), rgba(240,200,105,0.04));
+  border:1px solid var(--glass-border);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  color: var(--chalk); font-family:var(--sans); font-weight:500; font-size:1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+  overflow:hidden; isolation:isolate;
+  transition: transform .35s cubic-bezier(.2,.9,.25,1), box-shadow .35s ease, background .35s ease;
+  animation: floatBtn 4.5s ease-in-out infinite;
+}
+@keyframes floatBtn{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+.btn:hover{
+  box-shadow: 0 16px 46px rgba(240,200,105,.28), inset 0 1px 0 rgba(255,255,255,.25);
+  background: linear-gradient(160deg, rgba(240,200,105,0.26), rgba(240,200,105,0.08));
+}
+.btn:active{ transform: scale(.94) !important; }
+.btn.small{ padding:.65rem 1.3rem; font-size:.82rem; }
+.btn .ripple{
+  position:absolute; border-radius:50%; background:rgba(255,255,255,.55);
+  transform:scale(0); opacity:.6; pointer-events:none; mix-blend-mode:overlay;
+  animation:rippleAnim .6s ease-out forwards;
+}
+@keyframes rippleAnim{ to{ transform:scale(2.6); opacity:0; } }
+.btn-row{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+
+/* =========================================================
+   7. LESSON CARDS (Scene 4)
+========================================================= */
+.section-heading{
+  font-family:var(--serif); font-weight:600; font-style:italic;
+  font-size:clamp(1.7rem,5vw,2.6rem); margin-bottom:.4rem;
+  color: var(--chalk);
+}
+.section-sub{ color:rgba(245,242,232,.55); font-size:.95rem; margin-bottom:2.6rem; }
+.card-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:18px; width:100%;
+}
+.lesson-card{
+  position:relative; padding:2rem 1.3rem; border-radius:20px;
+  background: var(--glass); border:1px solid var(--glass-border);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow:0 20px 40px rgba(0,0,0,.3);
+  transform-style:preserve-3d;
+  transition: transform .4s ease, box-shadow .4s ease;
+  animation: floatCard 6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .35s);
+}
+@keyframes floatCard{ 0%,100%{ transform:translateY(0) rotateZ(0);} 50%{ transform:translateY(-10px) rotateZ(.4deg);} }
+.lesson-card:hover{ box-shadow:0 26px 60px rgba(240,200,105,.18); }
+.lesson-card .emoji{ font-size:2.1rem; display:block; margin-bottom:.7rem; filter:drop-shadow(0 0 10px rgba(240,200,105,.4)); }
+.lesson-card h3{ font-family:var(--serif); font-weight:600; font-size:1.15rem; margin:0 0 .3rem; }
+.lesson-card p{ font-size:.8rem; color:rgba(245,242,232,.5); margin:0; }
+
+/* card detail modal */
+.modal-overlay{
+  position:fixed; inset:0; z-index:200; background:rgba(5,6,26,.78);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display:flex; align-items:center; justify-content:center; padding:6vw;
+  opacity:0; pointer-events:none; transition: opacity .4s ease;
+}
+.modal-overlay.open{ opacity:1; pointer-events:auto; }
+.modal-card{
+  max-width:480px; width:100%; text-align:center;
+  background: linear-gradient(160deg, rgba(240,200,105,0.1), rgba(255,255,255,0.03));
+  border:1px solid var(--glass-border); border-radius:22px; padding:2.6rem 2rem;
+  transform: scale(.85); transition: transform .45s cubic-bezier(.2,.9,.25,1);
+  position:relative;
+}
+.modal-overlay.open .modal-card{ transform:scale(1); }
+.modal-card .emoji{ font-size:2.6rem; margin-bottom:.8rem; display:block; }
+.modal-card h3{ font-family:var(--serif); font-size:1.7rem; margin:0 0 1rem; color:var(--gold); }
+.modal-card p{ font-family:var(--serif); font-style:italic; font-size:1.05rem; line-height:1.65; color:rgba(245,242,232,.85); }
+.modal-close{
+  position:absolute; top:14px; right:16px; background:none; border:none;
+  color:rgba(245,242,232,.6); font-size:1.4rem; line-height:1;
+}
+
+/* =========================================================
+   8. TEACHER DESK / NOTEBOOK (Scene 5)
+========================================================= */
+.desk-scene{
+  width:min(94vw,640px); margin:0 auto 1.6rem;
+  padding:2.6rem 2rem; border-radius:24px;
+  background: linear-gradient(160deg, rgba(240,200,105,.08), rgba(255,255,255,.02));
+  border:1px solid var(--glass-border);
+  position:relative;
+}
+.desk-icons{ font-size:1.9rem; letter-spacing:.5rem; margin-bottom:1rem; opacity:.85; }
+.notebook{ width:min(90vw,380px); margin:1.6rem auto 0; }
+.notebook-cover{
+  position:relative; width:100%; min-height:150px; border-radius:10px 18px 18px 10px;
+  background: linear-gradient(160deg,#5a3a22,#3a2314);
+  box-shadow:0 20px 44px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.05);
+  display:flex; align-items:center; justify-content:center; text-align:center; padding:1.4rem;
+  cursor:pointer; transition: transform .3s ease, box-shadow .3s ease;
+}
+.notebook-cover:hover{ transform:translateY(-4px); box-shadow:0 26px 54px rgba(0,0,0,.55); }
+.notebook-cover span{ font-family:var(--serif); font-style:italic; color:rgba(245,242,232,.8); font-size:1.02rem; }
+
+/* ---- multi-page notebook letter (inside notebook-modal) ---- */
+.notebook-pages{ position:relative; min-height:260px; }
+.notebook-page-content{
+  display:none; padding:1.6rem 1.3rem 1.4rem 2.1rem; position:relative;
+  background-image: repeating-linear-gradient(
+    rgba(245,242,232,.06) 0px, rgba(245,242,232,.06) 1px,
+    transparent 1px, transparent 32px
+  );
+  border-radius:14px;
+}
+.notebook-page-content::before{
+  content:''; position:absolute; left:12px; top:6px; bottom:6px; width:2px;
+  background:rgba(216,100,100,.4); border-radius:2px;
+}
+.notebook-page-content.active{ display:block; animation: pageFlip .45s ease; }
+@keyframes pageFlip{ from{ opacity:0; transform:translateX(16px) rotateY(-4deg);} to{ opacity:1; transform:translateX(0) rotateY(0);} }
+.notebook-page-content p.typing-glow{
+  animation: letterGlow 1.8s ease-in-out infinite;
+}
+@keyframes letterGlow{
+  0%,100%{ text-shadow:0 0 6px rgba(245,242,232,.15); }
+  50%{ text-shadow:0 0 16px rgba(240,200,105,.55), 0 0 30px rgba(240,200,105,.25); }
+}
+.notebook-caret{
+  display:inline-block; width:2px; margin-left:1px;
+  background:var(--gold); box-shadow:0 0 8px rgba(240,200,105,.8);
+  animation: caretBlink .8s steps(1) infinite;
+}
+@keyframes caretBlink{ 50%{ opacity:0; } }
+.notebook-nav{ display:flex; align-items:center; justify-content:space-between; margin-top:1.2rem; padding:0 .2rem; }
+.notebook-nav button{
+  background:rgba(255,255,255,.04); border:1px solid var(--glass-border); color:var(--chalk);
+  border-radius:50%; width:38px; height:38px; font-size:1.2rem; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+}
+.notebook-nav button:disabled{ opacity:.25; }
+.notebook-dots{ display:flex; gap:7px; }
+.notebook-dot{ width:7px; height:7px; border-radius:50%; background:rgba(245,242,232,.28); transition:background .3s ease; }
+.notebook-dot.active{ background:var(--gold); }
+.notebook-page-counter{ text-align:center; font-size:.72rem; letter-spacing:.06em; color:rgba(245,242,232,.4); margin-top:.7rem; }
+
+/* =========================================================
+   9. STARS WALL (Scene 6)
+========================================================= */
+.stars-field{
+  position:relative; width:100%; max-width:760px; height:340px; margin:0 auto;
+}
+.star-item{
+  position:absolute; width:82px; padding:.6rem .3rem; text-align:center;
+  font-size:.68rem; color:rgba(245,242,232,.85); font-family:var(--sans);
+  transition: transform .8s cubic-bezier(.3,.7,.2,1), opacity .8s ease;
+}
+.star-item .glyph{ font-size:1.6rem; display:block; filter:drop-shadow(0 0 8px rgba(240,200,105,.6)); animation: starPulse 2.6s ease-in-out infinite; }
+@keyframes starPulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.18);} }
+.star-item.collected{ opacity:0; transform: translate(var(--tx), var(--ty)) scale(.2); }
+.stars-counter{ font-size:.8rem; color:rgba(245,242,232,.55); margin-top:1rem; }
+.reveal-board{
+  margin-top:2rem; padding:1.4rem 1.8rem; border-radius:14px;
+  background:var(--board); border:1px solid rgba(240,200,105,.25);
+  font-family:var(--chalkfont); font-size:1.5rem; color:var(--chalk);
+  opacity:0; transform:scale(.9); transition:opacity .7s ease, transform .7s ease;
+}
+.reveal-board.show{ opacity:1; transform:scale(1); }
+
+/* =========================================================
+   10. CREDITS / GURU section
+========================================================= */
+.credits-box{
+  width:min(92vw,620px); margin:0 auto; padding:2.4rem 2rem;
+  border-radius:22px; background:var(--glass); border:1px solid var(--glass-border);
+}
+.credit-row{ display:flex; align-items:flex-start; gap:14px; text-align:left; margin-bottom:1.3rem; }
+.credit-row:last-child{ margin-bottom:0; }
+.credit-icon{ font-size:1.5rem; margin-top:2px; }
+.credit-row h4{ font-family:var(--serif); font-size:1.15rem; margin:0 0 .2rem; color:var(--gold); }
+.credit-row p{ margin:0; font-size:.85rem; color:rgba(245,242,232,.65); line-height:1.55; }
+
+/* =========================================================
+   11. FINALE (Scene 7)
+========================================================= */
+#finale{ position:relative; }
+.finale-title{
+  font-family:var(--serif); font-weight:700; font-style:italic;
+  font-size:clamp(2rem,7vw,3.6rem); margin-bottom:1rem;
+  color:var(--gold); text-shadow:0 0 50px rgba(240,200,105,.35);
+}
+
+/* =========================================================
+   12. FLOATING UI (music toggle, about button)
+========================================================= */
+.floating-ui{
+  position:fixed; z-index:80; display:flex; gap:10px; flex-direction:column;
+}
+#sound-controls{
+  position:fixed; top:18px; right:18px; z-index:80;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+}
+#sound-toggle{ position:static; }
+#about-toggle{
+  top:18px; left:18px; position:fixed; z-index:80;
+  animation: aboutGlow 2.6s ease-in-out infinite;
+}
+@keyframes aboutGlow{
+  0%,100%{ box-shadow:0 8px 20px rgba(0,0,0,.35), 0 0 0px rgba(240,200,105,0); }
+  50%{ box-shadow:0 8px 20px rgba(0,0,0,.35), 0 0 22px 6px rgba(240,200,105,.55); }
+}
+#about-modal .about-body{
+  animation: aboutCardGlow 3.2s ease-in-out infinite;
+}
+@keyframes aboutCardGlow{
+  0%,100%{ box-shadow:0 30px 70px rgba(0,0,0,.5), 0 0 0px rgba(240,200,105,0); border-color:var(--glass-border); }
+  50%{ box-shadow:0 30px 70px rgba(0,0,0,.5), 0 0 34px 4px rgba(240,200,105,.28); border-color:rgba(240,200,105,.5); }
+}
+#about-modal .name{ text-shadow:0 0 16px rgba(240,200,105,.65); }
+#volume-slider{
+  -webkit-appearance:none; appearance:none;
+  width:80px; height:22px; background:transparent; cursor:pointer;
+}
+#volume-slider::-webkit-slider-runnable-track{
+  height:4px; border-radius:4px; background:rgba(245,242,232,.25);
+}
+#volume-slider::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; margin-top:-6px;
+  width:16px; height:16px; border-radius:50%; background:var(--gold);
+  box-shadow:0 0 8px rgba(240,200,105,.6); border:none;
+}
+#volume-slider::-moz-range-track{ height:4px; border-radius:4px; background:rgba(245,242,232,.25); }
+#volume-slider::-moz-range-thumb{
+  width:16px; height:16px; border-radius:50%; background:var(--gold); border:none;
+  box-shadow:0 0 8px rgba(240,200,105,.6);
+}
+.circle-btn{
+  position:relative; overflow:hidden; isolation:isolate;
+  width:48px; height:48px; border-radius:50%; border:1px solid var(--glass-border);
+  background:var(--glass); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); color:var(--chalk);
+  font-size:1.15rem; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.circle-btn:active{ transform:scale(.88); }
+.circle-btn .ripple{
+  position:absolute; border-radius:50%; background:rgba(255,255,255,.55);
+  transform:scale(0); opacity:.6; pointer-events:none; mix-blend-mode:overlay;
+  animation:rippleAnim .6s ease-out forwards;
+}
+
+/* About Sumit modal reuses .modal-overlay styling */
+.about-body{ text-align:left; }
+.about-body p{ font-family:var(--sans); font-style:normal; font-size:.9rem; color:rgba(245,242,232,.8); line-height:1.7; margin:0 0 .8rem; }
+.about-body .name{ color:var(--gold); font-family:var(--serif); font-style:italic; font-size:1.5rem; display:block; margin-bottom:.6rem; }
+
+footer.site-footer{
+  text-align:center; padding:3rem 6vw 4rem; font-size:.72rem; letter-spacing:.05em;
+  color:rgba(245,242,232,.4); position:relative; z-index:2;
+}
+
+/* mobile tweaks */
+@media (max-width:600px){
+  .scene{ padding:6vh 5vw; }
+  .board-frame{ width:94vw; }
+  .btn{ padding:.95rem 1.6rem; font-size:.92rem; }
+  .credit-row{ gap:10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOADER ============ -->
+<div id="loader">
+  <div class="loader-dot"></div>
+  <p id="loader-text">Preparing the classroom… <span id="loader-pct">0%</span></p>
+</div>
+
+<!-- ============ BACKGROUND SONG ============ -->
+<audio id="bg-music" src="song.mp3" loop preload="auto" playsinline></audio>
+
+<!-- ============ CURSOR GLOW ============ -->
+<div id="cursor-glow"></div>
+
+<!-- ============ 3D BACKGROUND ============ -->
+<canvas id="bg-canvas"></canvas>
+<div id="fallback-2d"></div>
+<canvas id="fx-canvas"></canvas>
+<div id="vignette"></div>
+
+<!-- ============ INTRO (Scene 1) ============ -->
+<div id="intro">
+  <div id="intro-lines">
+    <div class="intro-line" data-line="1">Someone once taught us…</div>
+    <div class="intro-line" data-line="2">…how to read.</div>
+    <div class="intro-line" data-line="3">…how to learn.</div>
+    <div class="intro-line" data-line="4">…and how to believe in ourselves.</div>
+  </div>
+</div>
+<button class="skip-btn tap-target" id="skip-intro">Skip ›</button>
+
+<!-- ============ FLOATING UI ============ -->
+<div id="sound-controls">
+  <button class="circle-btn tap-target" id="sound-toggle" aria-label="Toggle sound">🔇</button>
+  <input type="range" id="volume-slider" min="0" max="100" value="55" aria-label="Music volume">
+</div>
+<button class="circle-btn tap-target" id="about-toggle" aria-label="About Sumit">🙋</button>
+
+<!-- ============ MAIN SCROLLABLE EXPERIENCE ============ -->
+<div id="scene-root">
+
+  <!-- Scene 2: HERO -->
+  <section class="scene" id="hero">
+    <div class="scene-inner">
+      <div class="brand-tag reveal">MATH VISION PRESENTS</div>
+      <div class="role-badge reveal" id="role-badge" style="display:none;"></div>
+      <div class="board-frame reveal">
+        <div class="board-inner">
+          <svg class="chalk-svg" viewBox="0 0 600 260" id="chalk-svg">
+            <text id="chalk-line1" x="300" y="90" text-anchor="middle" font-size="58">HAPPY</text>
+            <text id="chalk-line2" x="300" y="160" text-anchor="middle" font-size="46" class="line2">TEACHER'S</text>
+            <text id="chalk-line3" x="300" y="220" text-anchor="middle" font-size="46">DAY ❤️</text>
+          </svg>
+        </div>
+      </div>
+      <div class="board-caption reveal">— written with chalk, meant from the heart —</div>
+      <h1 class="hero-title reveal">Happy Teacher's Day</h1>
+      <p class="hero-sub reveal">To the ones who make a difference — especially ours at Math Vision.<br><span id="hero-name-line" style="display:none;">Sent with love by <b id="hero-name-slot"></b>.</span></p>
+      <div class="btn-row reveal">
+        <button class="btn tap-target magnetic" id="start-celebration">🎁 Start Celebration</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene 3: intro line for celebration -->
+  <section class="scene" id="celebration-intro" style="display:none;">
+    <div class="scene-inner">
+      <p class="section-sub reveal" style="font-family:var(--serif);font-style:italic;font-size:clamp(1.2rem,3.6vw,1.8rem);color:rgba(245,242,232,.85)">Today isn't just another day…</p>
+      <h2 class="hero-title reveal" style="font-size:clamp(1.8rem,6vw,3.2rem)">Today is YOUR day.</h2>
+      <p class="section-heading reveal" style="font-size:clamp(1.6rem,5vw,2.4rem)">Thank You, Teacher ❤️</p>
+    </div>
+  </section>
+
+  <!-- Scene 4: LESSONS -->
+  <section class="scene" id="lessons">
+    <div class="scene-inner">
+      <h2 class="section-heading reveal">Lessons That Stay</h2>
+      <p class="section-sub reveal">Tap a card to open it.</p>
+      <div class="card-grid">
+        <div class="lesson-card reveal tap-target" style="--i:0" data-title="Knowledge" data-emoji="📚" data-msg="You didn't just teach us answers. You taught us how to find them.">
+          <span class="emoji">📚</span><h3>Knowledge</h3><p>Tap to open</p>
+        </div>
+        <div class="lesson-card reveal tap-target" style="--i:1" data-title="Inspiration" data-emoji="💡" data-msg="You showed us what we could become, long before we believed it ourselves.">
+          <span class="emoji">💡</span><h3>Inspiration</h3><p>Tap to open</p>
+        </div>
+        <div class="lesson-card reveal tap-target" style="--i:2" data-title="Confidence" data-emoji="❤️" data-msg="Every time you said 'you can', a little more of 'I can't' disappeared.">
+          <span class="emoji">❤️</span><h3>Confidence</h3><p>Tap to open</p>
+        </div>
+        <div class="lesson-card reveal tap-target" style="--i:3" data-title="Growth" data-emoji="🌱" data-msg="You planted patience where we had none, and it grew into who we are.">
+          <span class="emoji">🌱</span><h3>Growth</h3><p>Tap to open</p>
+        </div>
+        <div class="lesson-card reveal tap-target" style="--i:4" data-title="Dreams" data-emoji="⭐" data-msg="You didn't just teach the syllabus. You taught us to dream beyond it.">
+          <span class="emoji">⭐</span><h3>Dreams</h3><p>Tap to open</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene 5: TEACHER'S DESK -->
+  <section class="scene" id="desk">
+    <div class="scene-inner">
+      <h2 class="section-heading reveal">The Teacher's Desk</h2>
+      <div class="desk-scene reveal">
+        <div class="desk-icons">📖 🖊️ ☕ 🪴 💡</div>
+        <p class="section-sub" style="margin-bottom:.4rem;">A quiet corner where every lesson begins.</p>
+        <div class="notebook">
+          <div class="notebook-cover tap-target" id="notebook-cover">
+            <span>📖 Dear Teacher — tap to open</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene 6: STUDENT APPRECIATION -->
+  <section class="scene" id="stars-scene">
+    <div class="scene-inner">
+      <h2 class="section-heading reveal">Student Appreciation</h2>
+      <p class="section-sub reveal">Tap every star and send it to the blackboard.</p>
+      <div class="stars-field reveal" id="stars-field">
+        <!-- generated by JS -->
+      </div>
+      <p class="stars-counter">Collected: <span id="star-count">0</span> / <span id="star-total">5</span></p>
+      <div class="reveal-board" id="reveal-board">YOU MADE A DIFFERENCE ❤️</div>
+    </div>
+  </section>
+
+  <!-- Credits: Math Vision / Dk Sharma / Shubham Sir -->
+  <section class="scene" id="credits">
+    <div class="scene-inner">
+      <h2 class="section-heading reveal">With Gratitude, From Math Vision</h2>
+      <div class="credits-box reveal">
+        <div class="credit-row">
+          <span class="credit-icon">👨‍🏫</span>
+          <div>
+            <h4>Dk Sharma (Dhanji Sir)</h4>
+            <p>The kind of teacher who makes even the hardest chapter feel simple. Thank you for your patience and for never giving up on us, Sir.</p>
+          </div>
+        </div>
+        <div class="credit-row">
+          <span class="credit-icon">📐</span>
+          <div>
+            <h4>Shubham Sir</h4>
+            <p>Your hard work behind every class doesn't go unnoticed. Thank you for always putting in that extra effort for us.</p>
+          </div>
+        </div>
+        <div class="credit-row">
+          <span class="credit-icon">🌟</span>
+          <div>
+            <h4>A Little Secret, Just For You</h4>
+            <p>There's one more page waiting for you — the personal letter at the Teacher's Desk above. Go back and open the notebook whenever you like. ❤️</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene 7: FINALE -->
+  <section class="scene" id="finale">
+    <div class="scene-inner">
+      <h2 class="finale-title reveal">HAPPY TEACHER'S DAY! 🎉</h2>
+      <p class="hero-sub reveal">Thank you for being the light<br>that helps us find our way.</p>
+      <div class="btn-row reveal">
+        <button class="btn tap-target" id="celebrate-again">✨ Celebrate Again</button>
+        <button class="btn tap-target" id="share-btn">📤 Share The Love</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">Made with ❤️ by Sumit · Math Vision · Happy Teacher's Day</footer>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-overlay" id="card-modal">
+  <div class="modal-card">
+    <button class="modal-close tap-target" data-close>✕</button>
+    <span class="emoji" id="modal-emoji">📚</span>
+    <h3 id="modal-title">Knowledge</h3>
+    <p id="modal-msg">You didn't just teach us answers.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="notebook-modal">
+  <div class="modal-card about-body" style="max-width:460px;">
+    <button class="modal-close tap-target" data-close>✕</button>
+
+    <div class="notebook-pages" id="notebook-pages">
+
+      <div class="notebook-page-content active" data-page="1">
+        <span class="emoji" style="display:block; text-align:center;">📖</span>
+        <p style="font-family:var(--serif); font-style:italic; line-height:1.9; font-size:1.02rem; text-align:center;">
+          प्रिय गुरुजी,<br><br>
+          कुछ सबक परीक्षा खत्म होते ही<br>
+          भूल जाते हैं…<br><br>
+          पर जो पाठ आपने हमें पढ़ाए,<br>
+          वो हमेशा हमारे साथ रहेंगे।
+        </p>
+      </div>
+
+      <div class="notebook-page-content" data-page="2">
+        <p style="font-family:var(--serif); font-style:italic; line-height:1.9; font-size:1.02rem; text-align:center;">
+          आपने सिर्फ किताबों का ज्ञान नहीं दिया,<br>
+          आपने हमें सही राह दिखाई।<br><br>
+          जब भी हम हार मानने लगे,<br>
+          आपने कहा — <b>"तुम कर सकते हो"</b>,<br>
+          और हमने खुद पर भरोसा करना सीखा।<br><br>
+          Math Vision में बिताया हर पल,<br>
+          आपकी मेहनत की वजह से खास बन गया।
+        </p>
+      </div>
+
+      <div class="notebook-page-content" data-page="3">
+        <p style="font-family:var(--serif); font-style:italic; line-height:1.9; font-size:1.02rem; text-align:center;">
+          आज, इस Teacher's Day पर,<br>
+          हम दिल से शुक्रिया कहना चाहते हैं…<br><br>
+          आपके धैर्य के लिए,<br>
+          आपकी मेहनत के लिए,<br>
+          और हम पर कभी भरोसा न छोड़ने के लिए।<br><br>
+          <b>❤️ बहुत-बहुत धन्यवाद, गुरुजी।</b><br>
+          — आपके स्नेहभाजन छात्र
+        </p>
+      </div>
+
+    </div>
+
+    <div class="notebook-nav">
+      <button class="tap-target" id="notebook-prev" aria-label="Previous page">‹</button>
+      <div class="notebook-dots" id="notebook-dots">
+        <span class="notebook-dot active"></span>
+        <span class="notebook-dot"></span>
+        <span class="notebook-dot"></span>
+      </div>
+      <button class="tap-target" id="notebook-next" aria-label="Next page">›</button>
+    </div>
+    <p class="notebook-page-counter" id="notebook-page-counter">Page 1 / 3</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="review-modal">
+  <div class="modal-card about-body" id="review-modal-card">
+    <button class="modal-close tap-target" data-close>✕</button>
+    <div id="review-form-view">
+      <span class="name" style="text-align:center; display:block;">💌 Loved the surprise?</span>
+      <p style="text-align:center;">You've seen the whole celebration! Leave a quick review for Sumit — it'll go straight to his WhatsApp.</p>
+      <p id="review-time-spent" style="text-align:center; color:var(--gold); font-size:.85rem;"></p>
+      <textarea id="review-text" rows="4" placeholder="Write your review here..." style="width:100%; border-radius:14px; padding:.9rem 1rem; background:rgba(255,255,255,.06); border:1px solid var(--glass-border); color:var(--chalk); font-family:var(--sans); font-size:.95rem; resize:vertical; outline:none;"></textarea>
+      <button class="btn small tap-target" id="review-send" style="display:flex; margin:1.2rem auto 0;">📩 Send Review on WhatsApp</button>
+      <p id="review-fallback-note" style="display:none; text-align:center; font-size:.78rem; color:rgba(245,240,228,.6); margin-top:.8rem;">Couldn't open WhatsApp automatically — your review was copied instead. Just paste it in a WhatsApp chat to <b>7494064496</b>. 💌</p>
+    </div>
+    <div id="review-thanks-view" style="display:none; text-align:center;">
+      <span class="emoji" style="font-size:2.6rem; display:block; margin-bottom:.6rem;">💛</span>
+      <h3 style="font-family:var(--serif); font-style:italic; color:var(--gold); margin:0 0 .6rem;">Thank You!</h3>
+      <p>Your review is on its way to Sumit. Means a lot! 🎉</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="about-modal">
+  <div class="modal-card about-body">
+    <button class="modal-close tap-target" data-close>✕</button>
+    <span class="name">Hi, I'm Sumit 🙋</span>
+    <p>I built this little celebration to say thank you to my teachers at <b>Math Vision</b> — especially <b>Dk Sharma (Dhanji Sir)</b> and <b>Shubham Sir</b>, who put in so much hard work for us every single day.</p>
+    <p>This whole page is coded by hand — HTML, CSS, JavaScript, Three.js and GSAP — as my own Teacher's Day gift. Hope you enjoyed scrolling through it as much as I enjoyed building it. ❤️</p>
+    <p style="color:rgba(245,242,232,.45); font-size:.78rem;">— Sumit, Math Vision</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exit-modal">
+  <div class="modal-card">
+    <button class="modal-close tap-target" data-close>✕</button>
+    <span class="emoji">🥹</span>
+    <h3>Ruk Jaiye!</h3>
+    <p>Thoda aur baaki hai — poora dekhe bina mat jaiye, aapke liye kuch khaas rakha hai aage. ❤️</p>
+    <button class="btn small tap-target" id="exit-stay-btn" style="margin-top:.6rem;">Theek hai, rukta hu 🙂</button>
+  </div>
+</div>
+
+<!-- ============ LIBRARIES (CDN, with graceful fallback) ============ -->
+<script>
+  window.__THREE_OK__ = false;
+  window.__GSAP_OK__ = false;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onload="window.__THREE_OK__=true" onerror="window.__THREE_OK__=false"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" onload="window.__GSAP_OK__=true" onerror="window.__GSAP_OK__=false"></script>
+
+<script>
+/* =========================================================
+   MAIN APPLICATION SCRIPT
+   Structure:
+   1. Utilities
+   2. Sound system (Web Audio)
+   3. Three.js scene + particles (with 2D fallback)
+   4. Intro sequence (Scene 1)
+   5. Chalk writing animation (Scene 2)
+   6. Interaction: buttons, magnetic, ripple, tap-effect
+   7. Scroll reveal
+   8. Lesson cards modal (Scene 4)
+   9. Notebook flip (Scene 5)
+   10. Stars collection (Scene 6)
+   11. Celebration burst + confetti + fireworks (Scene 3 & 7)
+   12. About modal
+   13. Resize / visibility / cleanup
+========================================================= */
+(function(){
+  "use strict";
+
+  /* ---------- 1. UTILITIES ---------- */
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+  const isTouch = window.matchMedia('(hover: none)').matches;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+  const rand = (a,b)=> a + Math.random()*(b-a);
+  const hasGSAP = () => window.__GSAP_OK__ && window.gsap;
+
+  /* simple tween fallback if GSAP unavailable: CSS transition based */
+  function safeAnimate(el, props, duration=600){
+    if(hasGSAP()){ gsap.to(el, {...props, duration:duration/1000, ease:'power2.out'}); return; }
+    el.style.transition = `all ${duration}ms ease`;
+    Object.keys(props).forEach(k=>{
+      if(k==='opacity') el.style.opacity = props[k];
+      if(k==='x') el.style.transform = `translateX(${props[k]}px)`;
+    });
+  }
+
+  /* ---------- 2. SOUND SYSTEM ---------- */
+  const Sound = (function(){
+    let ctx=null, ambientNodes=null, enabled=false, unlocked=false;
+    function ensureCtx(){
+      if(!ctx){
+        try{ ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ ctx=null; }
+      }
+      return ctx;
+    }
+    function startAmbient(){
+      if(!ensureCtx() || ambientNodes) return;
+      const now = ctx.currentTime;
+      const master = ctx.createGain(); master.gain.value = 0.0;
+      master.connect(ctx.destination);
+      master.gain.linearRampToValueAtTime(0.05, now+2);
+
+      const freqs = [196.0, 246.94, 293.66]; // warm gentle chord
+      const oscs = freqs.map((f,i)=>{
+        const o = ctx.createOscillator();
+        o.type='sine'; o.frequency.value=f;
+        const g = ctx.createGain(); g.gain.value = 0.5/(i+1);
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.08+i*0.02;
+        const lfoGain = ctx.createGain(); lfoGain.gain.value = 3;
+        lfo.connect(lfoGain); lfoGain.connect(o.frequency);
+        o.connect(g); g.connect(master);
+        o.start(); lfo.start();
+        return {o,lfo};
+      });
+      ambientNodes = {master, oscs};
+    }
+    function stopAmbient(){
+      if(!ambientNodes) return;
+      const now = ctx.currentTime;
+      ambientNodes.master.gain.linearRampToValueAtTime(0, now+1);
+      setTimeout(()=>{
+        ambientNodes.oscs.forEach(({o,lfo})=>{ try{o.stop(); lfo.stop();}catch(e){} });
+        ambientNodes = null;
+      }, 1100);
+    }
+    function click(){
+      if(!enabled || !ensureCtx()) return;
+      const now = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type='triangle'; o.frequency.value = 880;
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.exponentialRampToValueAtTime(0.08, now+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+0.18);
+      o.start(now); o.stop(now+0.2);
+    }
+    function toggle(){
+      enabled = !enabled;
+      if(enabled){ ensureCtx(); if(ctx.state==='suspended') ctx.resume(); startAmbient(); }
+      else{ stopAmbient(); }
+      return enabled;
+    }
+    return { toggle, click, get enabled(){ return enabled; } };
+  })();
+
+  const soundBtn = $('#sound-toggle');
+  const bgMusic = $('#bg-music');
+  const volumeSlider = $('#volume-slider');
+  bgMusic.volume = 0.55;
+
+  soundBtn.addEventListener('click', ()=>{
+    if(bgMusic.paused){ bgMusic.play().catch(()=>{}); }
+    else { bgMusic.pause(); }
+  });
+  bgMusic.addEventListener('play', ()=>{ soundBtn.textContent = '🔊'; });
+  bgMusic.addEventListener('pause', ()=>{ soundBtn.textContent = '🔇'; });
+
+  volumeSlider.addEventListener('input', ()=>{
+    const v = Number(volumeSlider.value)/100;
+    bgMusic.volume = v;
+    if(v===0 && !bgMusic.paused){ bgMusic.pause(); }
+    else if(v>0 && bgMusic.paused){ bgMusic.play().catch(()=>{}); }
+  });
+
+  /* try to autoplay the song as soon as possible; most mobile browsers
+     block audio-with-sound autoplay, so fall back to starting it on the
+     very first tap/click/scroll anywhere on the page */
+  function tryPlayMusic(){ return bgMusic.play(); }
+  tryPlayMusic().catch(()=>{
+    const unlock = ()=>{
+      tryPlayMusic().catch(()=>{});
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('scroll', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, {once:true});
+    window.addEventListener('touchstart', unlock, {once:true});
+    window.addEventListener('scroll', unlock, {once:true});
+  });
+
+  /* global tap sound on any tap-target */
+  document.addEventListener('pointerdown', (e)=>{
+    if(e.target.closest && e.target.closest('.tap-target')) Sound.click();
+  });
+
+  /* ---------- 3. THREE.JS SCENE (with fallback) ---------- */
+  let renderer, scene, camera, particleSystems = {}, floatObjects = [];
+  let three_active = false;
+  let mouseX=0, mouseY=0, targetRotX=0, targetRotY=0;
+
+  function initThree(){
+    if(!window.__THREE_OK__ || !window.THREE){ initFallback2D(); return; }
+    try{
+      const canvas = $('#bg-canvas');
+      const THREE = window.THREE;
+      renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true, powerPreference:'low-power'});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isTouch?1.5:2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x0b0e23, 0.028);
+
+      camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 200);
+      camera.position.set(0, 1.2, 14);
+
+      // lights
+      const ambient = new THREE.AmbientLight(0x6a5acd, 0.55);
+      scene.add(ambient);
+      const moon = new THREE.DirectionalLight(0x8fa8ff, 0.4);
+      moon.position.set(-6, 8, 4);
+      scene.add(moon);
+      const warm = new THREE.PointLight(0xf0c869, 1.1, 30, 2);
+      warm.position.set(2, 3, 6);
+      scene.add(warm);
+      floatObjects.warmLight = warm;
+
+      // classroom silhouette: simple primitives (blackboard, desk, globe, books)
+      const boardGeo = new THREE.PlaneGeometry(6,3.4);
+      const boardMat = new THREE.MeshStandardMaterial({color:0x16241c, roughness:0.9});
+      const board = new THREE.Mesh(boardGeo, boardMat);
+      board.position.set(0, 1.4, -6);
+      scene.add(board);
+
+      const deskGeo = new THREE.BoxGeometry(4, 0.3, 1.6);
+      const woodMat = new THREE.MeshStandardMaterial({color:0x4a3320, roughness:0.8});
+      const desk = new THREE.Mesh(deskGeo, woodMat);
+      desk.position.set(0, -1.6, -2);
+      scene.add(desk);
+
+      const globeGeo = new THREE.SphereGeometry(0.45, 20, 20);
+      const globeMat = new THREE.MeshStandardMaterial({color:0x3d6e5c, wireframe:true, transparent:true, opacity:0.5});
+      const globe = new THREE.Mesh(globeGeo, globeMat);
+      globe.position.set(2.6, -0.8, -1.5);
+      scene.add(globe);
+      floatObjects.globe = globe;
+
+      // floating books
+      const bookColors = [0xe8a13c, 0xb5533c, 0x6a8fb5];
+      const books = new THREE.Group();
+      for(let i=0;i<5;i++){
+        const g = new THREE.BoxGeometry(0.55,0.08,0.4);
+        const m = new THREE.MeshStandardMaterial({color: bookColors[i%bookColors.length], roughness:0.7});
+        const b = new THREE.Mesh(g,m);
+        b.position.set(rand(-4,4), rand(-1,2.5), rand(-6,2));
+        b.rotation.set(rand(0,1), rand(0,3), rand(0,1));
+        b.userData.speed = rand(0.2,0.6);
+        b.userData.offset = rand(0,10);
+        books.add(b);
+      }
+      scene.add(books);
+      floatObjects.books = books;
+
+      // floating pencils
+      const pencils = new THREE.Group();
+      for(let i=0;i<4;i++){
+        const g = new THREE.CylinderGeometry(0.03,0.03,0.9,8);
+        const m = new THREE.MeshStandardMaterial({color:0xf0c869, roughness:0.5});
+        const p = new THREE.Mesh(g,m);
+        p.position.set(rand(-5,5), rand(-1,3), rand(-6,3));
+        p.rotation.set(rand(0,3), rand(0,3), rand(0,3));
+        p.userData.spin = rand(0.3,0.9);
+        pencils.add(p);
+      }
+      scene.add(pencils);
+      floatObjects.pencils = pencils;
+
+      // particle systems ------------------------------------------------
+      const particleCount = isTouch ? 500 : 1100;
+      function makeParticles(count, color, size, spread, speedRange){
+        const geo = new THREE.BufferGeometry();
+        const positions = new Float32Array(count*3);
+        const speeds = new Float32Array(count);
+        for(let i=0;i<count;i++){
+          positions[i*3] = rand(-spread, spread);
+          positions[i*3+1] = rand(-spread*0.6, spread*0.8);
+          positions[i*3+2] = rand(-spread, spread*0.4);
+          speeds[i] = rand(speedRange[0], speedRange[1]);
+        }
+        geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+        const mat = new THREE.PointsMaterial({
+          color, size, transparent:true, opacity:0.85,
+          blending: THREE.AdditiveBlending, depthWrite:false
+        });
+        const pts = new THREE.Points(geo, mat);
+        pts.userData.speeds = speeds;
+        scene.add(pts);
+        return pts;
+      }
+      particleSystems.gold = makeParticles(particleCount, 0xf0c869, 0.05, 9, [0.15,0.5]);
+      particleSystems.dust = makeParticles(Math.floor(particleCount*0.4), 0xffffff, 0.025, 6, [0.05,0.15]);
+
+      three_active = true;
+      animateThree();
+    }catch(err){
+      console.warn('Three.js init failed, using 2D fallback', err);
+      three_active = false;
+      initFallback2D();
+    }
+  }
+
+  let clock = null;
+  function animateThree(){
+    if(!three_active) return;
+    requestAnimationFrame(animateThree);
+    if(document.hidden) return;
+    const THREE = window.THREE;
+    if(!clock) clock = new THREE.Clock();
+    const t = clock.getElapsedTime();
+
+    // camera gentle parallax drift
+    targetRotY += (mouseX*0.4 - targetRotY)*0.03;
+    targetRotX += (mouseY*0.2 - targetRotX)*0.03;
+    camera.position.x += (targetRotY*2 - camera.position.x)*0.02;
+    camera.position.y += (1.2 - targetRotX*1.5 - camera.position.y)*0.02;
+    camera.lookAt(0,0.6,-4);
+
+    if(floatObjects.globe) floatObjects.globe.rotation.y = t*0.3;
+    if(floatObjects.books){
+      floatObjects.books.children.forEach(b=>{
+        b.position.y += Math.sin(t*b.userData.speed + b.userData.offset)*0.0025;
+        b.rotation.y += 0.002;
+      });
+    }
+    if(floatObjects.pencils){
+      floatObjects.pencils.children.forEach(p=>{ p.rotation.z += p.userData.spin*0.008; });
+    }
+    if(floatObjects.warmLight){
+      floatObjects.warmLight.intensity = 1.0 + Math.sin(t*2)*0.15;
+    }
+
+    // particles drift upward slowly, wrap around
+    ['gold','dust'].forEach(key=>{
+      const pts = particleSystems[key];
+      if(!pts) return;
+      const pos = pts.geometry.attributes.position;
+      const speeds = pts.userData.speeds;
+      for(let i=0;i<pos.count;i++){
+        let y = pos.getY(i) + speeds[i]*0.01;
+        if(y > 8) y = -6;
+        pos.setY(i, y);
+      }
+      pos.needsUpdate = true;
+      pts.rotation.y = t*0.01;
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  function initFallback2D(){
+    $('#bg-canvas').style.display='none';
+    const fb = $('#fallback-2d');
+    fb.style.display='block';
+    const n = isTouch? 40:70;
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div');
+      s.className='fstar';
+      s.style.left = rand(0,100)+'%';
+      s.style.top = rand(0,100)+'%';
+      s.style.animationDelay = rand(0,3)+'s';
+      s.style.background = Math.random()>0.6 ? 'var(--gold)' : '#fff';
+      fb.appendChild(s);
+    }
+  }
+
+  function onResize(){
+    if(!three_active || !renderer) return;
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.addEventListener('resize', onResize);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && three_active) animateThree(); });
+
+  /* mouse / touch parallax input */
+  function setPointer(x,y){
+    mouseX = (x/window.innerWidth)*2 - 1;
+    mouseY = (y/window.innerHeight)*2 - 1;
+  }
+  window.addEventListener('pointermove', (e)=>{
+    setPointer(e.clientX, e.clientY);
+    if(!isTouch){
+      const glow = $('#cursor-glow');
+      glow.style.left = e.clientX+'px';
+      glow.style.top = e.clientY+'px';
+    }
+  }, {passive:true});
+
+  /* ---------- 4. INTRO SEQUENCE ---------- */
+  function playIntro(){
+    const lines = $$('.intro-line');
+    const introEl = $('#intro');
+    if(hasGSAP()){
+      const tl = gsap.timeline({
+        onComplete: finishIntro
+      });
+      lines.forEach((line, i)=>{
+        tl.to(line, {opacity:1, y:0, duration:0.9, ease:'power2.out'}, i*1.6)
+          .to(line, {opacity:0, y:-16, duration:0.7, ease:'power2.in'}, i*1.6+1.15);
+      });
+      tl.to(introEl, {opacity:0, duration:1}, '+=0.2');
+    } else {
+      let delay = 300;
+      lines.forEach((line)=>{
+        setTimeout(()=>{ line.style.transition='opacity 0.9s ease'; line.style.opacity=1; }, delay);
+        setTimeout(()=>{ line.style.opacity=0; }, delay+1400);
+        delay += 1900;
+      });
+      setTimeout(finishIntro, delay+300);
+    }
+  }
+  let introFinished = false;
+  function finishIntro(){
+    if(introFinished) return;
+    introFinished = true;
+    const introEl = $('#intro');
+    introEl.classList.add('fade-out');
+    $('#skip-intro').style.display='none';
+    setTimeout(()=>{ introEl.style.display='none'; }, 1500);
+    revealHero();
+  }
+  $('#skip-intro').addEventListener('click', finishIntro);
+
+  function revealHero(){
+    $$('#hero .reveal').forEach((el,i)=>{
+      setTimeout(()=>{ el.classList.add('in-view'); }, i*180);
+    });
+    setTimeout(playChalkWriting, 300);
+  }
+
+  /* ---------- 5. CHALK WRITING ANIMATION ---------- */
+  function playChalkWriting(){
+    const lines = ['#chalk-line1','#chalk-line2','#chalk-line3'];
+    lines.forEach(sel=>{
+      const el = $(sel);
+      if(!el) return;
+      const len = el.getComputedTextLength ? el.getComputedTextLength() : 400;
+      el.style.strokeDasharray = len;
+      el.style.strokeDashoffset = len;
+    });
+    if(hasGSAP()){
+      const tl = gsap.timeline({delay:0.3});
+      lines.forEach((sel,i)=>{
+        tl.to(sel, {strokeDashoffset:0, duration:1.3, ease:'power1.inOut'}, i*1.1)
+          .to(sel, {fill: i===1? '#e8a13c':'#f5f2e8', duration:0.4}, i*1.1+1.0);
+      });
+    } else {
+      lines.forEach((sel,i)=>{
+        setTimeout(()=>{
+          const el = $(sel);
+          el.style.transition='stroke-dashoffset 1.3s ease';
+          el.style.strokeDashoffset = 0;
+        }, i*1100+300);
+      });
+    }
+  }
+
+  /* ---------- 6. INTERACTION: BUTTONS / MAGNETIC / RIPPLE / TAP ---------- */
+  function attachRipple(el){
+    el.addEventListener('pointerdown', function(e){
+      const rect = el.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className='ripple';
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size+'px';
+      const x = (e.clientX||rect.left+rect.width/2) - rect.left - size/2;
+      const y = (e.clientY||rect.top+rect.height/2) - rect.top - size/2;
+      ripple.style.left = x+'px'; ripple.style.top = y+'px';
+      el.appendChild(ripple);
+      setTimeout(()=> ripple.remove(), 650);
+    });
+  }
+  $$('.btn').forEach(attachRipple);
+  $$('.circle-btn').forEach(attachRipple);
+
+  /* generic tap-feedback: subtle scale + glow pulse on ANY .tap-target,
+     unified for mouse + touch via pointer events */
+  $$('.tap-target').forEach(el=>{
+    el.addEventListener('pointerdown', ()=>{
+      el.style.transition='transform .15s ease, filter .15s ease';
+      el.style.transform='scale(0.94)';
+      el.style.filter='brightness(1.15)';
+    });
+    const release = ()=>{
+      el.style.transform='';
+      el.style.filter='';
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointerleave', release);
+    el.addEventListener('pointercancel', release);
+  });
+
+  /* magnetic button (desktop only) */
+  if(!isTouch){
+    $$('.magnetic').forEach(btn=>{
+      btn.addEventListener('mousemove', (e)=>{
+        const r = btn.getBoundingClientRect();
+        const mx = e.clientX - (r.left+r.width/2);
+        const my = e.clientY - (r.top+r.height/2);
+        if(hasGSAP()) gsap.to(btn, {x:mx*0.25, y:my*0.25, duration:0.3, ease:'power2.out'});
+        else btn.style.transform = `translate(${mx*0.2}px, ${my*0.2}px)`;
+      });
+      btn.addEventListener('mouseleave', ()=>{
+        if(hasGSAP()) gsap.to(btn, {x:0,y:0,duration:0.5, ease:'elastic.out(1,0.4)'});
+        else btn.style.transform='';
+      });
+    });
+  }
+
+  /* particle burst on click (DOM-based, works regardless of three.js) */
+  function particleBurst(x, y, colorList){
+    const colors = colorList || ['#f0c869','#e8a13c','#fff8e6'];
+    const count = isTouch ? 10 : 16;
+    for(let i=0;i<count;i++){
+      const p = document.createElement('div');
+      const size = rand(4,8);
+      p.style.cssText = `position:fixed; left:${x}px; top:${y}px; width:${size}px; height:${size}px; border-radius:50%;
+        background:${colors[Math.floor(rand(0,colors.length))]}; z-index:9998; pointer-events:none;
+        box-shadow:0 0 8px 2px ${colors[0]}88;`;
+      document.body.appendChild(p);
+      const angle = rand(0, Math.PI*2);
+      const dist = rand(40,140);
+      const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist;
+      if(hasGSAP()){
+        gsap.to(p, {x:dx, y:dy, opacity:0, duration:rand(0.6,1.1), ease:'power2.out', onComplete:()=>p.remove()});
+      } else {
+        p.style.transition='transform 0.9s ease, opacity 0.9s ease';
+        requestAnimationFrame(()=>{ p.style.transform = `translate(${dx}px,${dy}px)`; p.style.opacity=0; });
+        setTimeout(()=>p.remove(), 950);
+      }
+    }
+  }
+  $$('.tap-target').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(el.tagName==='BUTTON' || el.classList.contains('lesson-card') || el.classList.contains('star-item')){
+        particleBurst(e.clientX||window.innerWidth/2, e.clientY||window.innerHeight/2);
+      }
+    });
+  });
+
+  /* ---------- 7. SCROLL REVEAL ---------- */
+  const revealObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting) entry.target.classList.add('in-view');
+    });
+  }, {threshold:0.15});
+  $$('.reveal').forEach(el=>{
+    if(el.closest('#hero')) return; // hero handled by intro sequence
+    revealObserver.observe(el);
+  });
+
+  /* ---------- 8. LESSON CARDS MODAL ---------- */
+  const cardModal = $('#card-modal');
+  $$('.lesson-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      $('#modal-emoji').textContent = card.dataset.emoji;
+      $('#modal-title').textContent = card.dataset.title;
+      $('#modal-msg').textContent = card.dataset.msg;
+      cardModal.classList.add('open');
+    });
+  });
+  $$('.modal-overlay').forEach(overlay=>{
+    overlay.addEventListener('click', (e)=>{
+      if(e.target===overlay || e.target.closest('[data-close]')) overlay.classList.remove('open');
+    });
+  });
+
+  /* ---------- 9. NOTEBOOK (opens the shared, reliable modal) ---------- */
+  const notebookCover = $('#notebook-cover');
+  const notebookModal = $('#notebook-modal');
+  const notebookPages = $$('.notebook-page-content');
+  const notebookDots = $$('.notebook-dot');
+  const notebookPrevBtn = $('#notebook-prev');
+  const notebookNextBtn = $('#notebook-next');
+  const notebookCounter = $('#notebook-page-counter');
+  let notebookIndex = 0;
+
+  // snapshot each page's original HTML once, before any typing overwrites it
+  const notebookOriginalHTML = notebookPages.map(page => page.querySelector('p').innerHTML);
+  let notebookTypeGen = 0;
+
+  function typeIntoElement(el, html, speed, gen){
+    const tokens = html.match(/<[^>]+>|[^<]/g) || [];
+    let i = 0;
+    el.innerHTML = '';
+    el.classList.add('typing-glow');
+    const caret = document.createElement('span');
+    caret.className = 'notebook-caret';
+    el.appendChild(caret);
+    function step(){
+      if(gen !== notebookTypeGen) return; // a newer page took over, stop this run
+      if(i>=tokens.length){ caret.remove(); return; }
+      let out = '';
+      while(i<tokens.length && tokens[i][0]==='<'){ out += tokens[i]; i++; }
+      if(i<tokens.length){ out += tokens[i]; i++; }
+      caret.insertAdjacentHTML('beforebegin', out);
+      setTimeout(step, speed);
+    }
+    step();
+  }
+
+  function renderNotebookPage(){
+    notebookPages.forEach((p,i)=> p.classList.toggle('active', i===notebookIndex));
+    notebookDots.forEach((d,i)=> d.classList.toggle('active', i===notebookIndex));
+    notebookPrevBtn.disabled = notebookIndex===0;
+    notebookNextBtn.disabled = notebookIndex===notebookPages.length-1;
+    notebookCounter.textContent = `Page ${notebookIndex+1} / ${notebookPages.length}`;
+
+    const myGen = ++notebookTypeGen;
+    const activePage = notebookPages[notebookIndex];
+    const p = activePage.querySelector('p');
+    typeIntoElement(p, notebookOriginalHTML[notebookIndex], 22, myGen);
+  }
+  notebookPrevBtn.addEventListener('click', ()=>{
+    if(notebookIndex>0){ notebookIndex--; renderNotebookPage(); }
+  });
+  notebookNextBtn.addEventListener('click', ()=>{
+    if(notebookIndex<notebookPages.length-1){ notebookIndex++; renderNotebookPage(); }
+  });
+  notebookCover.addEventListener('click', ()=>{
+    notebookIndex = 0;
+    renderNotebookPage();
+    notebookModal.classList.add('open');
+  });
+
+  /* ---------- 10. STARS COLLECTION ---------- */
+  const starMessages = [
+    'Thank You',
+    'Your patience matters.',
+    'You inspired us.',
+    'You believed in us.',
+    'You made learning special.'
+  ];
+  const starsField = $('#stars-field');
+  const starTotalEl = $('#star-total');
+  const starCountEl = $('#star-count');
+  starTotalEl.textContent = starMessages.length;
+  let collected = 0;
+  const starPositions = [
+    {left:'8%', top:'10%'},{left:'70%', top:'4%'},{left:'40%', top:'32%'},
+    {left:'12%', top:'62%'},{left:'75%', top:'58%'}
+  ];
+  starMessages.forEach((msg,i)=>{
+    const el = document.createElement('div');
+    el.className='star-item tap-target';
+    el.style.left = starPositions[i].left;
+    el.style.top = starPositions[i].top;
+    el.innerHTML = `<span class="glyph">⭐</span>${msg}`;
+    el.addEventListener('click', ()=>{
+      if(el.classList.contains('collected')) return;
+      const boardRect = $('#reveal-board').getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const tx = (boardRect.left - elRect.left) + 'px';
+      const ty = (boardRect.top - elRect.top) + 'px';
+      el.style.setProperty('--tx', tx);
+      el.style.setProperty('--ty', ty);
+      el.classList.add('collected');
+      collected++;
+      starCountEl.textContent = collected;
+      if(collected === starMessages.length){
+        setTimeout(()=> $('#reveal-board').classList.add('show'), 500);
+      }
+    });
+    starsField.appendChild(el);
+  });
+
+  /* ---------- 11. CELEBRATION BURST + CONFETTI + FIREWORKS ---------- */
+  const startBtn = $('#start-celebration');
+  const celebIntro = $('#celebration-intro');
+
+  startBtn.addEventListener('click', (e)=>{
+    particleBurst(e.clientX, e.clientY, ['#f0c869','#e8a13c','#fff']);
+    runConfetti(70);
+    lightsFlicker();
+    setTimeout(()=>{
+      celebIntro.style.display='flex';
+      $$('#celebration-intro .reveal').forEach((el,i)=> setTimeout(()=> el.classList.add('in-view'), i*350));
+      celebIntro.scrollIntoView({behavior:'smooth'});
+    }, 500);
+  });
+
+  function lightsFlicker(){
+    if(!three_active || !floatObjects.warmLight) return;
+    const light = floatObjects.warmLight;
+    let steps = 0;
+    const iv = setInterval(()=>{
+      light.intensity = steps%2===0 ? 0.1 : 2.2;
+      steps++;
+      if(steps>6){ clearInterval(iv); light.intensity=1.3; }
+    }, 110);
+  }
+
+  /* confetti via 2D canvas overlay */
+  const fxCanvas = $('#fx-canvas');
+  const fxCtx = fxCanvas.getContext('2d');
+  function resizeFx(){ fxCanvas.width = window.innerWidth; fxCanvas.height = window.innerHeight; }
+  resizeFx(); window.addEventListener('resize', resizeFx);
+
+  let confettiParticles = [];
+  let fireworkParticles = [];
+  let fxRunning = false;
+
+  function runConfetti(count){
+    const colors = ['#f0c869','#e8a13c','#f5f2e8','#b5533c','#6a8fb5'];
+    for(let i=0;i<count;i++){
+      confettiParticles.push({
+        x: rand(0, fxCanvas.width),
+        y: rand(-fxCanvas.height*0.3, 0),
+        w: rand(5,10), h: rand(8,14),
+        rot: rand(0, Math.PI*2),
+        vRot: rand(-0.1,0.1),
+        vy: rand(2,5), vx: rand(-1.2,1.2),
+        color: colors[Math.floor(rand(0,colors.length))],
+        life: rand(140,260)
+      });
+    }
+    ensureFxLoop();
+  }
+
+  function runFireworks(count){
+    for(let f=0; f<count; f++){
+      const cx = rand(fxCanvas.width*0.15, fxCanvas.width*0.85);
+      const cy = rand(fxCanvas.height*0.15, fxCanvas.height*0.5);
+      const hue = Math.floor(rand(30,50));
+      const n = 34;
+      for(let i=0;i<n;i++){
+        const angle = (Math.PI*2*i)/n;
+        const speed = rand(1.5,4.5);
+        fireworkParticles.push({
+          x:cx, y:cy,
+          vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+          color: `hsl(${hue},85%,${rand(55,72)}%)`,
+          life: rand(50,90), maxLife: 90
+        });
+      }
+    }
+    ensureFxLoop();
+  }
+
+  function ensureFxLoop(){
+    if(fxRunning) return;
+    fxRunning = true;
+    fxLoop();
+  }
+  function fxLoop(){
+    fxCtx.clearRect(0,0,fxCanvas.width, fxCanvas.height);
+    if(confettiParticles.length){
+      confettiParticles.forEach(p=>{
+        p.x += p.vx; p.y += p.vy; p.rot += p.vRot; p.life--;
+        fxCtx.save();
+        fxCtx.translate(p.x,p.y); fxCtx.rotate(p.rot);
+        fxCtx.fillStyle = p.color;
+        fxCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+        fxCtx.restore();
+      });
+      confettiParticles = confettiParticles.filter(p=> p.life>0 && p.y < fxCanvas.height+30);
+    }
+    if(fireworkParticles.length){
+      fireworkParticles.forEach(p=>{
+        p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.life--;
+        fxCtx.globalAlpha = clamp(p.life/p.maxLife, 0, 1);
+        fxCtx.fillStyle = p.color;
+        fxCtx.beginPath(); fxCtx.arc(p.x,p.y,2.2,0,Math.PI*2); fxCtx.fill();
+        fxCtx.globalAlpha = 1;
+      });
+      fireworkParticles = fireworkParticles.filter(p=> p.life>0);
+    }
+    if(confettiParticles.length || fireworkParticles.length){
+      requestAnimationFrame(fxLoop);
+    } else {
+      fxRunning = false;
+    }
+  }
+
+  /* Finale: trigger fireworks + confetti when finale section in view */
+  let reviewShown = false;
+  const finaleObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        runFireworks(3);
+        runConfetti(90);
+        setTimeout(()=>runFireworks(2), 900);
+        if(!reviewShown){
+          reviewShown = true;
+          setTimeout(()=>{
+            const mins = getMinutesSpent();
+            $('#review-time-spent').textContent = mins
+              ? `You spent about ${mins} minute${mins>1?'s':''} with us here ❤️`
+              : '';
+            $('#review-modal').classList.add('open');
+          }, 1800);
+        }
+      }
+    });
+  }, {threshold:0.4});
+  finaleObserver.observe($('#finale'));
+
+  /* ---------- REVIEW POPUP → straight to WhatsApp (with clipboard fallback) ---------- */
+  const WHATSAPP_NUMBER = '917494064496'; // 91 = India country code
+  $('#review-send').addEventListener('click', ()=>{
+    const reviewBox = $('#review-text');
+    const review = reviewBox.value.trim();
+    const senderName = (window.__userName && window.__userName !== 'Friend') ? window.__userName : 'A viewer';
+    const mins = getMinutesSpent();
+    const timeLine = mins ? `\n(spent ~${mins} min on the site)` : '';
+    const message = review
+      ? `⭐ Review for the Teacher's Day site:\n"${review}"\n\n— ${senderName}${timeLine}`
+      : `⭐ ${senderName} just finished watching the Teacher's Day site! No written review, just loved it. 🎉${timeLine}`;
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+    const opened = window.open(waUrl, '_blank');
+    const whatsappBlocked = !opened;
+
+    if(whatsappBlocked){
+      // fallback: copy the review text so the user can paste it manually
+      const fullText = message + `\n\nSend to: +${WHATSAPP_NUMBER}`;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(fullText).catch(()=>{});
+      }
+      $('#review-fallback-note').style.display = 'block';
+    }
+    showReviewThanks();
+  });
+
+  function showReviewThanks(){
+    $('#review-form-view').style.display = 'none';
+    $('#review-thanks-view').style.display = 'block';
+    setTimeout(()=>{
+      $('#review-modal').classList.remove('open');
+      setTimeout(()=>{
+        // reset for next time (e.g. after Celebrate Again)
+        $('#review-form-view').style.display = 'block';
+        $('#review-thanks-view').style.display = 'none';
+        $('#review-fallback-note').style.display = 'none';
+        $('#review-text').value = '';
+      }, 700);
+    }, 2200);
+  }
+
+  /* Celebrate again: reset & scroll to top */
+  $('#celebrate-again').addEventListener('click', ()=>{
+    runConfetti(60);
+    window.scrollTo({top:0, behavior:'smooth'});
+    // reset stars
+    collected = 0; starCountEl.textContent=0;
+    $$('.star-item').forEach(s=> s.classList.remove('collected'));
+    $('#reveal-board').classList.remove('show');
+    // reset notebook
+    notebookModal.classList.remove('open');
+    celebIntro.style.display='none';
+  });
+
+  /* ---------- 12. ABOUT MODAL ---------- */
+  const aboutModal = $('#about-modal');
+  $('#about-toggle').addEventListener('click', ()=> aboutModal.classList.add('open'));
+
+  /* ---------- 12c. EXIT-INTENT POPUP ---------- */
+  const exitModal = $('#exit-modal');
+  let exitIntentShown = false;
+  function showExitPopup(){
+    if(exitIntentShown || reviewShown) return; // don't nag someone who already finished
+    exitIntentShown = true;
+    exitModal.classList.add('open');
+  }
+  $('#exit-stay-btn').addEventListener('click', ()=> exitModal.classList.remove('open'));
+
+  // Desktop: mouse leaves out the top of the viewport (classic exit-intent)
+  document.addEventListener('mouseout', (e)=>{
+    if(!e.relatedTarget && e.clientY <= 4){ showExitPopup(); }
+  });
+
+  // Mobile: intercept the back button once, so leaving via back gets a gentle nudge
+  history.pushState({ exitGuard:true }, '', location.href);
+  window.addEventListener('popstate', ()=>{
+    if(!exitIntentShown && !reviewShown){
+      history.pushState({ exitGuard:true }, '', location.href);
+      showExitPopup();
+    }
+  });
+
+  // Mobile heuristic: scrolled fairly deep, then rushed back up near the very top
+  let maxScrollSeen = 0;
+  window.addEventListener('scroll', ()=>{
+    maxScrollSeen = Math.max(maxScrollSeen, window.scrollY);
+    if(maxScrollSeen > 700 && window.scrollY < 40){ showExitPopup(); }
+  }, {passive:true});
+
+  /* ---------- 12b. SHARE ---------- */
+  $('#share-btn').addEventListener('click', async (e)=>{
+    particleBurst(e.clientX||window.innerWidth/2, e.clientY||window.innerHeight/2);
+    const senderName = (window.__userName && window.__userName !== 'Friend') ? window.__userName : 'a student';
+    const text = `✨ Happy Teacher's Day! 🎓❤️\nA little celebration made with love by ${senderName} for our amazing teachers at Math Vision — Dk Sharma (Dhanji Sir) & Shubham Sir.\nSpread the gratitude! 🙏`;
+    const shareData = { title: "Happy Teacher's Day — Math Vision", text, url: window.location.href };
+    if(navigator.share){
+      try{ await navigator.share(shareData); }catch(err){ /* user cancelled, no-op */ }
+    } else {
+      const full = text + '\n' + window.location.href;
+      try{
+        await navigator.clipboard.writeText(full);
+        alert('Message copied! Paste it anywhere to share 💌');
+      }catch(err){
+        window.prompt('Copy this message to share:', full);
+      }
+    }
+  });
+
+  /* ---------- 13. NO GATE — straight into the experience ---------- */
+  window.__userName = 'Friend';
+
+  /* ---------- LOADER PROGRESS ---------- */
+  const loaderPctEl = $('#loader-pct');
+  let loaderProgress = 0;
+  let loaderDone = false;
+  const loaderInterval = setInterval(()=>{
+    if(loaderDone) return;
+    // ease toward 90% while real assets are still loading
+    loaderProgress += (90 - loaderProgress) * 0.12 + 0.4;
+    if(loaderProgress > 90) loaderProgress = 90;
+    loaderPctEl.textContent = Math.round(loaderProgress) + '%';
+  }, 150);
+  function finishLoaderProgress(){
+    loaderDone = true;
+    clearInterval(loaderInterval);
+    loaderPctEl.textContent = '100%';
+  }
+
+  /* ---------- TIME-SPENT TRACKING ---------- */
+  let experienceStartTime = null;
+  function getMinutesSpent(){
+    if(!experienceStartTime) return 0;
+    return Math.max(1, Math.round((Date.now() - experienceStartTime)/60000));
+  }
+
+  /* ---------- BOOTSTRAP ---------- */
+  let threeInitialized = false;
+  function boot(){
+    if(threeInitialized) return;
+    threeInitialized = true;
+    initThree();
+    finishLoaderProgress();
+    startExperience();
+  }
+  function startExperience(){
+    setTimeout(()=>{
+      $('#loader').classList.add('hide');
+      $('#vignette').classList.add('show');
+      experienceStartTime = Date.now();
+      playIntro();
+    }, 400);
+  }
+
+  window.addEventListener('load', boot);
+  if(document.readyState==='complete') boot();
+
+})();
+</script>
+</body>
+</html>
